@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net7.0</TargetFramework>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+
+        <Company>Pixsper</Company>
+        <Product>Disguise Tool</Product>
+        <Description>Command-line utility for working with disguise</Description>
+        <Copyright>Copyright © 2023 Pixsper Ltd.</Copyright>
+
+        <Nullable>enable</Nullable>
+        <WarningsAsErrors>nullable</WarningsAsErrors>
+
+        <AssemblyName>disguisetool</AssemblyName>
+        <PublishSingleFile>true</PublishSingleFile>
+        <SelfContained>true</SelfContained>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="CsvHelper" Version="30.0.1" />
+      <PackageReference Include="FFMpegCore" Version="5.1.0" />
+      <PackageReference Include="GitVersion.MsBuild" Version="5.12.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Spectre.Console.Cli" Version="0.47.0" />
+    </ItemGroup>
+
+
+</Project>
