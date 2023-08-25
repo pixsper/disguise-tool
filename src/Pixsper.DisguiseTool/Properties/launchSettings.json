@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Pixsper.DisguiseTool": {
+      "commandName": "Project",
+      "commandLineArgs": "audit \"C:\\Users\\David\\Documents\\d3 Projects\\nixoninchina\" \"C:\\Users\\David\\Documents\\d3 Projects\\carmen\" -i mov -i cube"
+    }
+  }
+}
