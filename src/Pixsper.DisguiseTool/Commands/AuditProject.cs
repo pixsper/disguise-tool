@@ -43,7 +43,7 @@ public class AuditProject : AsyncCommand<AuditProject.Settings>
         [Description("Get media info")]
         [CommandOption("-m|--mediainfo")]
         [DefaultValue(false)]
-        public bool RequestMediaInfo { get; init; }
+        public bool IsRequestMediaInfo { get; init; }
 
         [Description("FFMmpeg binary folder")]
         [CommandOption("-f|--ffmpeg")]
@@ -59,6 +59,11 @@ public class AuditProject : AsyncCommand<AuditProject.Settings>
         [CommandOption("-l|--parallel_files")]
         [DefaultValue(64)]
         public int MaxParallelFiles { get; init; }
+
+        [Description("Raw directory mode (paths are not disguise project directories)")]
+        [CommandOption("-r|--raw")]
+        [DefaultValue(false)]
+        public bool IsRawDirectoryMode { get; init; }
 
         public override ValidationResult Validate()
         {
@@ -78,24 +83,31 @@ public class AuditProject : AsyncCommand<AuditProject.Settings>
         var records = new ConcurrentBag<AuditRecord>();
 
         await Parallel.ForEachAsync(settings.ProjectDirectoryPaths, new ParallelOptions { MaxDegreeOfParallelism = settings.MaxParallelProjects },
-            async (projectPath, ct) =>
+            async (rawPath, ct) =>
             {
-                if (!Directory.Exists(projectPath))
+                if (!Directory.Exists(rawPath))
                 {
-                    AnsiConsole.MarkupLine($"[red]Couldn't find project directory at path '{projectPath}'[/]");
+                    AnsiConsole.MarkupLine($"[red]Couldn't find directory at path '{rawPath}'[/]");
                     return;
                 }
 
-                var objectsPath = Path.Combine(projectPath, "objects");
-
-                if (!Directory.Exists(objectsPath))
+                string targetPath;
+                if (settings.IsRawDirectoryMode)
                 {
-                    AnsiConsole.MarkupLine(
-                        $"[red]Couldn't find objects directory in project '{Path.GetFileName(projectPath)}'[/]");
-                    return;
+                    targetPath = rawPath;
+                }
+                else
+                {
+                    targetPath = Path.Combine(rawPath, "objects");
+                    if (!Directory.Exists(targetPath))
+                    {
+                        AnsiConsole.MarkupLine(
+                            $"[red]Couldn't find objects directory in project '{Path.GetFileName(rawPath)}'. If this is not a disguise project directory, please use raw mode with -r option.[/]");
+                        return;
+                    }
                 }
 
-                await Parallel.ForEachAsync(Directory.EnumerateFiles(objectsPath, "*.*", SearchOption.AllDirectories),
+                await Parallel.ForEachAsync(Directory.EnumerateFiles(targetPath, "*.*", SearchOption.AllDirectories),
                     new ParallelOptions { MaxDegreeOfParallelism = settings.MaxParallelFiles, CancellationToken = ct },
                     async (file, ctInner) =>
                     {
@@ -116,11 +128,11 @@ public class AuditProject : AsyncCommand<AuditProject.Settings>
                         {
                             var info = new FileInfo(file);
 
-                            var relativePath = Path.GetRelativePath(objectsPath, file);
+                            var relativePath = Path.GetRelativePath(targetPath, file);
 
                             var entry = new AuditRecord
                             {
-                                ProjectPath = projectPath,
+                                ProjectPath = rawPath,
                                 FileName = relativePath[..^Path.GetExtension(relativePath).Length],
                                 Extension = extension,
                                 CreationTime = info.CreationTime,
@@ -128,7 +140,7 @@ public class AuditProject : AsyncCommand<AuditProject.Settings>
                                 SizeInMB = (info.Length / 1024d) / 1024d
                             };
 
-                            if (settings.RequestMediaInfo)
+                            if (settings.IsRequestMediaInfo)
                             {
                                 IMediaAnalysis? mediaInfo;
 
